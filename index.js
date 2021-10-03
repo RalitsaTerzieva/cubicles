@@ -7,6 +7,9 @@ const app = express();
 const cubController = require('./controllers/cubController.js')
 const homeController = require('./controllers/homeController.js')
 
+//instead of body parser we use this code
+app.use(express.urlencoded({extended: true}));
+
 require('./config/express')(app);
 require('./config/routes')(app);
 

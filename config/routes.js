@@ -10,6 +10,6 @@ module.exports = (app) => {
     })
     
     router.use(homeController);
-    router.use(cubController);
+    router.use('/cube', cubController);
     
 };
