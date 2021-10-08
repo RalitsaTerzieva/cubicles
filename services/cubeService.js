@@ -5,8 +5,9 @@ const path = require('path');
 
 //return all the data from the json file
 //const getAll = () => cubeDb;
-const getAll = () => Cube.getAll();
+const getAll = () => Cube.cubes
 
+const getOne = (id) => Cube.cubes.find(x => x.id == id)
 
 const create = (name, description, imageUrl, difficultyLevel) => {
     let cube = new Cube(name, description, imageUrl, difficultyLevel);
@@ -21,7 +22,8 @@ const create = (name, description, imageUrl, difficultyLevel) => {
 
 const cubeService = {
     create, 
-    getAll
+    getAll,
+    getOne
 }
 
 module.exports = cubeService
