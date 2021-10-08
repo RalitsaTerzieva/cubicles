@@ -8,8 +8,11 @@ module.exports = (app) => {
     router.all('/', (req, res) => {
         res.render('index')
     })
-    
-    router.use(homeController);
-    router.use('/cube', cubController);
-    
+
+    app.use(router)
+    app.use(homeController);
+    app.use('/cube', cubController);
+    app.use('*', (req, res) => {
+        res.render('404');
+    })
 };
