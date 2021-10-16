@@ -1,47 +1,60 @@
-const Cube = require('../models/Cube.js');
-const cubeDb = require('../config/database.json');
-const fs = require('fs');
-const path = require('path');
+const Cube = require('../models/Cube');
+const Accessory = require('../models/Accessory.js');
 
-//return all the data from the json file
-//const getAll = () => cubeDb;
-const getAll = () => Cube.cubes
+const getAll = () => Cube.find({}).lean();
 
-const getOne = (id) => Cube.cubes.find(x => x.id == id)
+const getOne = (id) => Cube.findById(id).populate('accessories').lean()
 
-const create = (name, description, imageUrl, difficultyLevel) => {
-    let cube = new Cube(name, description, imageUrl, difficultyLevel);
-    Cube.add(cube)
-    //cubeDb.push(cube);
-    let result = JSON.stringify(cubeDb, '', 2);
-    const dbPath = path.resolve(path.join(__dirname, '..', 'config', 'database.json'))
-    fs.writeFileSync(dbPath, result, {
-        encoding: "utf8"
-    })
-}
+const create = (name, description, imageUrl, difficulty) => {
+    let cube = new Cube({
+        name,
+        description,
+        imageUrl,
+        difficulty,
+    });
 
-const search = (search, from, to) =>  {
-    let result = Cube.cubes;
-    if(search) {
-        result = result.filter(x => x.name.toLowerCase().includes(search.toLowerCase()));
+    return cube.save();
+};
+
+const search = async (text, from, to) => {
+    let result = await getAll();
+
+    if (text) {
+        result = result.filter(x => x.name.toLowerCase().includes(text.toLowerCase()))
     }
 
-    if(from) {
-        result = result.filter(x => x.difficultyLevel >= from);
+    if (from) {
+        result = result.filter(x => x.difficulty >= from);
     }
 
-    if(to) {
-        result = result.filter(x => x.difficultyLevel <= to);
+    if (to) {
+        result = result.filter(x => x.difficulty <= to);
     }
 
     return result;
 };
 
-const cubeService = {
-    create, 
-    getAll,
-    getOne, 
-    search
-}
+const attachAccessory = async (cubeId, accessoryId) => {
+    let cube = await Cube.findById(cubeId);
+    let accessory = await Accessory.findById(accessoryId);
 
-module.exports = cubeService
+    cube.accessories.push(accessory);
+
+    return cube.save();
+};
+
+const deleteOne = (cubeId) => Cube.findByIdAndDelete(cubeId);
+
+const updateOne = (cubeId, cube) => Cube.findByIdAndUpdate(cubeId, cube, { runValidators: true });
+
+const cubeService = {
+    getAll,
+    create,
+    getOne,
+    search,
+    attachAccessory,
+    deleteOne,
+    updateOne,
+};
+
+module.exports = cubeService;
