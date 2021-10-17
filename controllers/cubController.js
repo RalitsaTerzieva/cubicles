@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const cubeService = require('../services/cubeService.js');
+const validator = require('validator-js');
 
 //Put everything about cubic here
 
@@ -13,6 +14,11 @@ const getCreateCubPage = (req, res) => {
 
 const createCub = (req, res) => {
     let {name, description, imageUrl, difficultyLevel} = req.body;
+
+    if(!validator.isURL(imageUrl)) {
+        return res.status(400).send("Invalid email!")
+    }
+    
     cubeService.create(name, description, imageUrl, difficultyLevel);
     res.redirect('/cube/create');
 }
