@@ -1,15 +1,15 @@
 // const jwt = require('jsonwebtoken');
 // const bcrypt = require('bcrypt');
-const User = require('../models/User.js');
-const { jwtSign } = require('../utils/jwtUtils.js');
-const { SECRET } = require('../constants.js');
+const User = require('../models/User');
+const { jwtSign } = require('../utils/jwtUtils');
+const { SECRET } = require('../constants');
 
 exports.register = function (username, password, repeatPassword) {
     // validate password
     // return bcrypt.hash(password, 10)
     //     .then(hash => User.create({ username, password: hash }))
 
-    return User.create({ username, password });
+    return User.create({ username, password, repeatPassword });
 };
 
 exports.login = function (username, password) {
