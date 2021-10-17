@@ -1,37 +1,82 @@
-const express = require('express');
-const router = express.Router();
-const cubeService = require('../services/cubeService.js');
-const validator = require('validator-js');
+const router = require('express').Router();
+const validator = require('validator');
+const { body, validationResult } = require('express-validator');
 
-//Put everything about cubic here
+const cubeService = require('../services/cubeService');
+const cubeAccessoryController = require('./cubeAccessoryController');
+const { isAuth } = require('../middlewares/authMiddleware');
+const { isOwnCube } = require('../middlewares/cubeAuthMiddleware');
 
-const getCreateCubPage = (req, res) => {
-    let cubes = cubeService.getAll();
-    console.log(cubes)
-    
-    res.render('create') 
-}
+const getCreateCubePage = (req, res) => {
+    res.render('cube/create');
+};
 
-const createCub = (req, res) => {
-    let {name, description, imageUrl, difficultyLevel} = req.body;
+const createCube = async (req, res) => {
+    let { name, description, imageUrl, difficulty } = req.body;
 
-    if(!validator.isURL(imageUrl)) {
-        return res.status(400).send("Invalid email!")
+    // if (!validator.isURL(imageUrl)) {
+    //     return res.status(400).send('Invalid Email!');
+    // }
+
+    try {
+        await cubeService.create(name, description, imageUrl, difficulty, req.user._id);
+
+        res.redirect('/');
+    } catch (error) {
+        // res.status(400).send(error.message).end();
+        console.log(error.errors.name.message);
+
+        let errors = Object.keys(error.errors).map(x => error.errors[x].message);
+
+        console.log(errors);
+        
+        res.locals.errors = errors;
+
+        res.render('cube/create')
     }
-    
-    cubeService.create(name, description, imageUrl, difficultyLevel);
-    res.redirect('/cube/create');
-}
+};
 
-const getCubeDetails = (req, res) => {
-    //take the id from the url
-    let cube = cubeService.getOne(req.param.cubeId);
-    res.render('details', { ...cube })
-}
+const cubeDetails = async (req, res) => {
+    let cube = await cubeService.getOne(req.params.cubeId);
 
-router.get('/create', getCreateCubPage);
-router.post('/create', createCub);
-router.get('/:cubeId', getCubeDetails);
+    let isOwn = cube.creator == req.user._id;
 
+    res.render('cube/details', { ...cube, isOwn });
+};
+
+const getEditCubePage = async (req, res) => {
+    // let cube = await cubeService.getOne(req.params.cubeId);
+
+    res.render('cube/edit', req.cube);
+};
+
+const postEditCubePage = async (req, res) => {
+    let { name, description, imageUrl, difficulty } = req.body;
+
+    await cubeService.updateOne(req.params.cubeId, { name, description, imageUrl, difficulty })
+
+    res.redirect(`/cube/${req.params.cubeId}`);
+};
+
+const getDeleteCubePage = async (req, res) => {
+    // let cube = await cubeService.getOne(req.params.cubeId);
+    res.render('cube/delete', req.cube);
+};
+
+const postDeleteCubePage = async (req, res) => {
+    await cubeService.deleteOne(req.params.cubeId);
+
+    res.redirect(`/`);
+};
+
+router.get('/create', isAuth, getCreateCubePage);
+router.post('/create', isAuth, body('imageUrl').isURL().isLength({min: 5}), createCube);
+router.get('/:cubeId', cubeDetails);
+router.get('/:cubeId/edit', isAuth, isOwnCube, getEditCubePage);
+router.post('/:cubeId/edit', isAuth, isOwnCube, postEditCubePage);
+router.get('/:cubeId/delete', isAuth, isOwnCube, getDeleteCubePage);
+router.post('/:cubeId/delete', isAuth, isOwnCube, postDeleteCubePage);
+
+router.use('/:cubeId/accessory', cubeAccessoryController);
 
 module.exports = router;
